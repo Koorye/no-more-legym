@@ -2,6 +2,7 @@ from PIL import Image, ImageTk
 import time
 import threading
 import tkinter as tk
+import traceback
 from tkinter import ttk
 from tkinter import messagebox
 from legym_fix.api import login
@@ -13,6 +14,22 @@ code, name, status = None, None, None
 is_loop = False
 stop_loop = False
 
+class Catcher: 
+    def __init__(self, func, subst, widget):
+        self.func = func 
+        self.subst = subst
+        self.widget = widget
+    def __call__(self, *args):
+        try:
+            if self.subst:
+                args = self.subst(*args)
+            return self.func(*args)
+        except SystemExit:
+            raise
+        except BaseException as e:
+            messagebox.showerror(title='Error', message=e)
+            traceback.print_exc(file=open('error.log', 'a'))
+    
 def handle_login():
     global user
     user = login(username.get(), password.get())
@@ -122,6 +139,8 @@ def handle_stop_loop_sign():
 
 window = tk.Tk()
 window.title('No More Legym V0.1')
+
+tk.CallWrapper = Catcher
 
 frame1 = tk.Frame(window, relief=tk.RAISED, borderwidth=2)
 frame1.pack(side='left', fill='y', ipadx=13, ipady=13, expand=0)
